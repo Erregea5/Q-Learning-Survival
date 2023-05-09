@@ -27,7 +27,7 @@ class fox(animal):
     self.attack_range=20
     self.attack_damage=10
     self.anger_until_berserk=3
-    self.vision_range=250
+    self.vision_range=200
     self.species=3
     self.time_until_hunger=100
     self.damage_from_hunger=1
@@ -76,7 +76,7 @@ class player:
     starting_pos=(screen.get_width() / 2, screen.get_height() / 2)
     self.species=5
     self.attack_range=20
-    self.attack_damage=10
+    self.attack_damage=0
     self.anger_until_berserk=3
     self.time_until_hunger=50
     self.damage_from_hunger=0
@@ -142,9 +142,9 @@ class player:
 
 class animal_list:
   def __init__(self):
-    foxes=5
-    rabbits=6
-    self.cap=15
+    foxes=3
+    rabbits=5
+    self.cap=10
     self.animals=[fox() for i in range(foxes)]+[rabbit() for i in range(rabbits)]
 
   def do_attacks(self,player):
@@ -185,15 +185,17 @@ class animal_list:
         d_hunger=a.hunger-last_memory[1]
         d_anger=a.anger-last_memory[2]
         d_distances=0
-        for i in range(a.focus_capacity):
-          cur=a.surroundings[i]
+        spec="rabbit" if a.species==2 else "fox"
+        for cur in a.surroundings:
           if cur==0:
             break
-          dist=(cur.pos[0]**2+cur.pos[1]**2)**.5
+          dist=a.vision_range-((cur.pos[0]-a.pos[0])**2+(cur.pos[1]-a.pos[1])**2)**.5
           if cur.species>a.species:
-            d_distances-=dist            
-          else:d_distances+=dist
-        a.reward=d_health-d_hunger-d_anger+d_distances*10/a.vision_range
+            d_distances-=dist      
+          elif cur.species<a.species:
+            d_distances+=dist
+        #print(spec,": ",d_distances,", ",d_health,", ",d_hunger,", ",d_anger)
+        a.reward=d_health/a.starting_health-d_hunger/a.hunger_until_damage-d_anger/a.anger_until_berserk+d_distances*5/a.vision_range
       ##add + proximity to prey and - proximity to predators
 
   def update(self,player):
@@ -222,7 +224,14 @@ while running:
 
 pygame.quit()
 ### plot rewards and loss
-##for a in animals.animals:
-  ##plt.plot(a.brain.rewards)
-  ##plt.plot(a.brain.loss)
-##plt.show()
+for a in animals.animals:
+  label="fox" if a.species==3 else "rabbit"
+  plt.plot(a.brain.rewards,label=label)
+plt.legend()
+plt.show()
+
+for a in animals.animals:
+  label="fox" if a.species==3 else "rabbit"
+  plt.plot(a.brain.loss,label=label)
+plt.legend()
+plt.show()
