@@ -3,17 +3,17 @@ from matplotlib import pyplot as plt
 import random
 class brain:
   def __init__(self, ancestor=None, activation=None, num_of_states=None, inner_layers=None, num_of_actions=None):
-    self.max_layers=10
-    self.max_memory=20
+    self.max_layers=15
+    self.max_memory=30
     self.desired_min_memory=13
     self.memory=[]
     self.prev_memory=None
     self.parameters=[]
     self.parameters_temp=[]
     self.epsilon=.1
-    self.gamma=.1
+    self.gamma=.5
     self.alpha=.1
-    self.copy_time=5
+    self.copy_time=10
     self.time=0
     self.activation=activation
     self.loss=[]
@@ -79,16 +79,16 @@ class brain:
     for p in self.parameters_temp:
       p.grad=None
     loss=(expected-actual.max())**2
-    ###self.loss.append(loss.data)###  uncomment this to track loss
+    self.loss.append(loss.item())###  uncomment this to track loss
     loss.backward(retain_graph=True)
     for p in self.parameters_temp:
       p.data+=-self.alpha*p.grad
 
   def pass_through(self,input,reward=None):
     cur_memory=[input]
+    self.rewards.append(reward.item())###  uncomment this to track rewards
     if self.prev_memory is not None:
       self.prev_memory.append(reward)
-      ###self.rewards.append(reward.data)###  uncomment this to track rewards
       self.prev_memory.append(input)
       self.memory.append(self.prev_memory)
 
@@ -197,13 +197,13 @@ class animal:
 
   def get_entities_in_range(self,animal_list,player=None):
     i=0
-    if player!=None and ((player.pos[0]-self.pos[0])**2 + (player.pos[1]-self.pos[1])**2)**.5<self.vision_range:
+    if player!=None and ((player.pos[0]-self.pos[0])**2 + (player.pos[1]-self.pos[1])**2)<self.vision_range**2:
       self.surroundings[i]=player
       i+=1
     for animal in animal_list:
       if i>=self.focus_capacity:
         break
-      if animal!=self and ((animal.pos[0]-self.pos[0])**2 + (animal.pos[1]-self.pos[1])**2)**.5<self.vision_range:
+      if animal!=self and ((animal.pos[0]-self.pos[0])**2 + (animal.pos[1]-self.pos[1])**2)<self.vision_range**2:
         self.surroundings[i]=animal
         i+=1
     while i<self.focus_capacity:
@@ -234,7 +234,7 @@ class animal:
     
   def replicate(self,animal_list,cap):
     time=self.brain.time
-    if self.hunger<self.hunger_to_replicate and time%self.time_to_replicate==0 and len(animal_list)<cap:
+    if self.hunger<self.hunger_to_replicate and time>0 and time%self.time_to_replicate==0 and len(animal_list)<cap:
       for i in range(self.children):
         new_pos=[self.pos[u]+torch.randn(1).item()*10 for u in range(2)]
         animal_list.append(animal(pos=new_pos,ancestor=self,default=False))
